@@ -22,13 +22,9 @@ def run_evaluation(data_path: str, limit: int = None, output_dir: str = None):
     total_samples = len(loader)
     num_samples = min(limit, total_samples) if limit else total_samples
 
-    print("=" * 60)
-    print("Invoice Extraction - Full Evaluation")
-    print("=" * 60)
-    print(f"Dataset: {data_path}")
-    print(f"Total samples: {total_samples}")
-    print(f"Processing: {num_samples} samples")
-    print()
+    print("\nStarting invoice extraction evaluation")
+    print(f"Using dataset: {data_path}")
+    print(f"Found {total_samples} samples, will process {num_samples}\n")
 
     # Initialize
     pipeline = ExtractionPipeline()
@@ -40,7 +36,7 @@ def run_evaluation(data_path: str, limit: int = None, output_dir: str = None):
 
     # Process all samples
     start_time = time.time()
-    print("Processing invoices...")
+    print("Running extraction on invoices...")
 
     for i, sample in enumerate(loader.iter_samples(limit=num_samples)):
         result = pipeline.process(
@@ -86,12 +82,12 @@ def run_evaluation(data_path: str, limit: int = None, output_dir: str = None):
         if (i + 1) % 10 == 0 or (i + 1) == num_samples:
             elapsed = time.time() - start_time
             rate = (i + 1) / elapsed
-            print(f"  {i+1}/{num_samples} ({rate:.1f} docs/sec)")
+            print(f"  done {i+1} of {num_samples} - {rate:.1f} per sec")
 
     total_time = time.time() - start_time
 
     # Evaluate
-    print("\nCalculating metrics...")
+    print("\nNow computing metrics...")
     report = evaluator.evaluate(results, ground_truths)
 
     # HITL statistics
@@ -102,30 +98,23 @@ def run_evaluation(data_path: str, limit: int = None, output_dir: str = None):
     }
 
     # Print results
-    print("\n" + "=" * 60)
-    print("RESULTS")
-    print("=" * 60)
+    print("\n--- Results ---\n")
 
-    print(f"\nProcessing Summary:")
-    print(f"  Total documents: {num_samples}")
-    print(f"  Total time: {total_time:.1f}s")
-    print(f"  Avg time per doc: {(total_time/num_samples)*1000:.0f}ms")
+    print(f"Processed {num_samples} docs in {total_time:.1f}s (avg {(total_time/num_samples)*1000:.0f}ms each)")
 
-    print(f"\nHITL Routing:")
-    print(f"  Auto-accept: {hitl_stats['auto_accept']} ({hitl_stats['auto_accept']/num_samples:.1%})")
-    print(f"  Needs review: {hitl_stats['needs_review']} ({hitl_stats['needs_review']/num_samples:.1%})")
-    print(f"  Reject: {hitl_stats['reject']} ({hitl_stats['reject']/num_samples:.1%})")
+    print(f"\nRouting breakdown:")
+    print(f"  auto-accept: {hitl_stats['auto_accept']} ({hitl_stats['auto_accept']/num_samples:.1%})")
+    print(f"  needs review: {hitl_stats['needs_review']} ({hitl_stats['needs_review']/num_samples:.1%})")
+    print(f"  rejected: {hitl_stats['reject']} ({hitl_stats['reject']/num_samples:.1%})")
 
     print("\n" + report.summary())
 
     # Threshold analysis
-    print("\nConfidence Threshold Analysis:")
-    print(f"{'Threshold':<12} {'Accept Rate':<14} {'Accuracy':<12}")
-    print("-" * 40)
+    print("\nThreshold analysis:")
     analysis = evaluator.analyze_thresholds(results, ground_truths)
     for thresh in sorted(analysis.keys()):
         stats = analysis[thresh]
-        print(f"{thresh:<12.2f} {stats['auto_accept_rate']:<14.1%} {stats['accuracy']:<12.1%}")
+        print(f"  {thresh:.2f} -> accept {stats['auto_accept_rate']:.1%}, accuracy {stats['accuracy']:.1%}")
 
     # Save results if output dir specified
     if output_dir:
@@ -138,7 +127,7 @@ def run_evaluation(data_path: str, limit: int = None, output_dir: str = None):
         results_file = output_path / f"extractions_{timestamp}.json"
         with open(results_file, "w") as f:
             json.dump(all_extractions, f, indent=2, ensure_ascii=False)
-        print(f"\nDetailed results saved to: {results_file}")
+        print(f"\nWrote detailed results to {results_file}")
 
         # Save summary
         summary = {
@@ -169,7 +158,7 @@ def run_evaluation(data_path: str, limit: int = None, output_dir: str = None):
         summary_file = output_path / f"summary_{timestamp}.json"
         with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2)
-        print(f"Summary saved to: {summary_file}")
+        print(f"Summary at {summary_file}")
 
     return report
 
@@ -198,7 +187,7 @@ def main():
     args = parser.parse_args()
 
     if not Path(args.data).exists():
-        print(f"Error: Data file not found: {args.data}")
+        print(f"Can't find data file: {args.data}")
         return
 
     run_evaluation(args.data, limit=args.limit, output_dir=args.output)
