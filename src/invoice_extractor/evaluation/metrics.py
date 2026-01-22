@@ -9,9 +9,10 @@ metrics used:
 - Exact Match: percentage of perfect matches
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import Dict, List
-import re
+
 from ..models.result import HITLDecision
 
 
@@ -55,6 +56,7 @@ def normalize_text(text: str) -> str:
 @dataclass
 class FieldMetrics:
     """metrics for one field type"""
+
     name: str
     true_positives: int = 0  # extracted and correct
     false_positives: int = 0  # extracted but wrong
@@ -91,6 +93,7 @@ class FieldMetrics:
 @dataclass
 class EvaluationReport:
     """complete evaluation results"""
+
     total_docs: int = 0
     auto_accepted: int = 0
     needs_review: int = 0
@@ -117,13 +120,19 @@ class EvaluationReport:
 
     @property
     def hitl_rate(self) -> float:
-        return (self.needs_review + self.rejected) / self.total_docs if self.total_docs > 0 else 0.0
+        return (
+            (self.needs_review + self.rejected) / self.total_docs
+            if self.total_docs > 0
+            else 0.0
+        )
 
     def summary(self) -> str:
         lines = [
             f"Documents: {self.total_docs}",
-            f"Overall - P: {self.overall_precision:.1%}, R: {self.overall_recall:.1%}, F1: {self.overall_f1:.1%}",
-            f"HITL: {self.auto_accepted} auto / {self.needs_review} review / {self.rejected} reject",
+            f"Overall - P: {self.overall_precision:.1%}, "
+            f"R: {self.overall_recall:.1%}, F1: {self.overall_f1:.1%}",
+            f"HITL: {self.auto_accepted} auto / {self.needs_review} review / "
+            f"{self.rejected} reject",
             f"Avg time: {self.avg_time_ms:.0f}ms",
             "",
             "Per-field metrics:",
@@ -162,7 +171,7 @@ class EvaluationReport:
                     "cer": m.avg_cer,
                 }
                 for name, m in self.field_metrics.items()
-            }
+            },
         }
 
 
@@ -245,15 +254,18 @@ class Evaluator:
 
         analysis = {}
         for thresh in thresholds:
-            accepted = [(r, g) for r, g in zip(results, ground_truths)
-                        if r.overall_confidence >= thresh]
+            accepted = [
+                (r, g)
+                for r, g in zip(results, ground_truths)
+                if r.overall_confidence >= thresh
+            ]
 
             if not accepted:
                 analysis[thresh] = {
                     "threshold": thresh,
                     "auto_accept_rate": 0,
                     "auto_accept_count": 0,
-                    "accuracy": 0
+                    "accuracy": 0,
                 }
                 continue
 
@@ -269,8 +281,7 @@ class Evaluator:
                         all_ok = False
                         break
                     cer = character_error_rate(
-                        normalize_text(extracted),
-                        normalize_text(gt[fname])
+                        normalize_text(extracted), normalize_text(gt[fname])
                     )
                     if cer > 0.2:
                         all_ok = False

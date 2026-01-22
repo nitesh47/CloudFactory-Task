@@ -2,10 +2,10 @@
 Configuration for invoice extraction system.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 
 def _load_dotenv():
@@ -34,6 +34,7 @@ _load_dotenv()
 @dataclass
 class OCRConfig:
     """OCR model settings - uses DocTR pretrained models by default."""
+
     det_arch: str = "fast_base"
     rec_arch: str = "parseq"
     use_gpu: bool = False
@@ -46,6 +47,7 @@ class OCRConfig:
 @dataclass
 class LLMConfig:
     """llm fallback settings"""
+
     api_key: str = None
     model: str = "gpt-4o-mini"
     use_local: bool = False
@@ -61,15 +63,23 @@ class LLMConfig:
 @dataclass
 class HITLConfig:
     """human review routing settings"""
+
     confidence_threshold: float = 0.60
-    critical_fields: list = field(default_factory=lambda: [
-        "Summe", "IBAN", "Rechnungsnummer", "Falligkeitsdatum", "Rechnungsdatum"
-    ])
+    critical_fields: list = field(
+        default_factory=lambda: [
+            "Summe",
+            "IBAN",
+            "Rechnungsnummer",
+            "Falligkeitsdatum",
+            "Rechnungsdatum",
+        ]
+    )
 
 
 @dataclass
 class Config:
     """Main configuration."""
+
     ocr: OCRConfig = field(default_factory=OCRConfig)
     llm: LLMConfig = field(default_factory=LLMConfig)
     hitl: HITLConfig = field(default_factory=HITLConfig)

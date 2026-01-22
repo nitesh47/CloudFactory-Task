@@ -49,9 +49,7 @@ def test_extraction():
     try:
         pipeline = ExtractionPipeline()
         result = pipeline.process(
-            sample.image_bytes,
-            document_id="test_sample",
-            use_llm_fallback=False
+            sample.image_bytes, document_id="test_sample", use_llm_fallback=False
         )
         print(f"  done in {result.processing_time_ms:.0f}ms")
     except Exception as e:
@@ -69,7 +67,7 @@ def test_extraction():
             name: {
                 "value": f.value,
                 "confidence": round(f.confidence, 3),
-                "needs_review": f.needs_review or f.confidence < 0.6
+                "needs_review": f.needs_review or f.confidence < 0.6,
             }
             for name, f in result.fields.items()
         },
@@ -78,10 +76,10 @@ def test_extraction():
                 "description": item.description,
                 "quantity": item.quantity,
                 "total": item.total,
-                "confidence": round(item.confidence, 3)
+                "confidence": round(item.confidence, 3),
             }
             for item in result.line_items
-        ]
+        ],
     }
 
     # Print result
@@ -93,7 +91,8 @@ def test_extraction():
     print(f"doc: {result.document_id}")
     print(f"confidence: {result.overall_confidence:.1%}")
     print(f"decision: {result.hitl_decision.value}")
-    print(f"extracted {sum(1 for f in result.fields.values() if f.value)} of {len(result.fields)} fields")
+    extracted_count = sum(1 for f in result.fields.values() if f.value)
+    print(f"extracted {extracted_count} of {len(result.fields)} fields")
     print(f"found {len(result.line_items)} line items")
     low_conf = sum(1 for f in result.fields.values() if f.value and f.confidence < 0.6)
     if low_conf:

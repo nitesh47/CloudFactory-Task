@@ -5,8 +5,8 @@ Validates extracted values and provides confidence adjustments.
 
 import re
 from dataclasses import dataclass
-from typing import Optional, Tuple
 from datetime import datetime
+from typing import Optional, Tuple
 
 
 @dataclass
@@ -37,7 +37,7 @@ class FieldValidators:
             return ValidationResult(False, 0.4, error="wrong length")
 
         # format with spaces
-        formatted = " ".join(cleaned[i:i+4] for i in range(0, len(cleaned), 4))
+        formatted = " ".join(cleaned[i : i + 4] for i in range(0, len(cleaned), 4))
 
         # iban checksum validation
         if cleaned.startswith("DE"):
@@ -188,7 +188,18 @@ class FieldValidators:
             return ValidationResult(False, 0.1, error="wrong field")
 
         # has legal suffix - high confidence
-        legal_suffixes = ["gmbh", "ag", "e.k.", "ohg", "kg", "gbr", "ug", "mbh", "inc", "ltd"]
+        legal_suffixes = [
+            "gmbh",
+            "ag",
+            "e.k.",
+            "ohg",
+            "kg",
+            "gbr",
+            "ug",
+            "mbh",
+            "inc",
+            "ltd",
+        ]
         for suffix in legal_suffixes:
             if suffix in cleaned.lower():
                 return ValidationResult(True, 1.0, corrected_value=cleaned)
@@ -238,7 +249,16 @@ class FieldValidators:
             return ValidationResult(False, 0.3, error="too short")
 
         # known bank keywords
-        bank_keywords = ["bank", "sparkasse", "volksbank", "commerzbank", "deutsche", "postbank", "ing", "dkb"]
+        bank_keywords = [
+            "bank",
+            "sparkasse",
+            "volksbank",
+            "commerzbank",
+            "deutsche",
+            "postbank",
+            "ing",
+            "dkb",
+        ]
         for kw in bank_keywords:
             if kw in cleaned.lower():
                 return ValidationResult(True, 1.0, corrected_value=cleaned)
@@ -286,7 +306,9 @@ class InvoiceValidator:
 
         return corrected, needs_llm
 
-    def get_field_quality(self, field_name: str, value: str, confidence: float) -> Tuple[float, bool]:
+    def get_field_quality(
+        self, field_name: str, value: str, confidence: float
+    ) -> Tuple[float, bool]:
         """
         get adjusted confidence and whether field needs llm
         """

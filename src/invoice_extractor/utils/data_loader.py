@@ -2,17 +2,20 @@
 Data loading
 """
 
+import io
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Iterator, Any
-from PIL import Image
-import io
+from typing import Any, Dict, Iterator, List
+
 import pandas as pd
+from PIL import Image
+
 
 @dataclass
 class InvoiceSample:
     """single invoice sample from the dataset"""
+
     index: int
     image: Image.Image
     ground_truth: Dict[str, str]
@@ -63,10 +66,7 @@ class DataLoader:
         ground_truth = json.loads(gt_str) if isinstance(gt_str, str) else gt_str
 
         return InvoiceSample(
-            index=idx,
-            image=image,
-            ground_truth=ground_truth,
-            image_bytes=image_bytes
+            index=idx, image=image, ground_truth=ground_truth, image_bytes=image_bytes
         )
 
     def iter_samples(self, limit: int = None) -> Iterator[InvoiceSample]:

@@ -2,10 +2,10 @@
 Data models for extraction results.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Dict, List, Any
-from enum import Enum
 import json
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class HITLDecision(Enum):
@@ -17,6 +17,7 @@ class HITLDecision(Enum):
 @dataclass
 class LineItem:
     """single line item from invoice"""
+
     description: Optional[str]
     quantity: Optional[str]
     unit_price: Optional[str]
@@ -38,6 +39,7 @@ class LineItem:
 @dataclass
 class FieldResult:
     """single extracted field with confidence info"""
+
     field_name: str
     value: Optional[str]
     confidence: float
@@ -60,6 +62,7 @@ class FieldResult:
 @dataclass
 class ExtractionResult:
     """complete extraction result for one invoice"""
+
     document_id: str
     fields: Dict[str, FieldResult] = field(default_factory=dict)
     line_items: List[LineItem] = field(default_factory=list)
@@ -94,7 +97,9 @@ class ExtractionResult:
             weighted_sum += fld.confidence * weight
             total_weight += weight
 
-        self.overall_confidence = weighted_sum / total_weight if total_weight > 0 else 0.0
+        self.overall_confidence = (
+            weighted_sum / total_weight if total_weight > 0 else 0.0
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         return {

@@ -3,14 +3,15 @@ OCR using DocTR library for German invoice text extraction.
 """
 
 import hashlib
+import io
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
-from dataclasses import dataclass
-from PIL import Image
+
 import numpy as np
-import io
 from doctr.models import ocr_predictor
+from PIL import Image
 
 
 @dataclass
@@ -26,8 +27,9 @@ class DocTROCR:
     Text extraction using doctr with parseq recognition.
     """
 
-    def __init__(self, det_arch="fast_base", rec_arch="parseq",
-                 use_gpu=False, cache_dir=None):
+    def __init__(
+        self, det_arch="fast_base", rec_arch="parseq", use_gpu=False, cache_dir=None
+    ):
         self.det_arch = det_arch
         self.rec_arch = rec_arch
         self.use_gpu = use_gpu
@@ -45,7 +47,6 @@ class DocTROCR:
 
     def _load_model(self):
         # use default pretrained models
-
 
         predictor = ocr_predictor(
             det_arch=self.det_arch,
@@ -85,8 +86,15 @@ class DocTROCR:
         self._cache[key] = blocks
         if self._cache_dir:
             path = self._cache_dir / f"{key}.json"
-            data = [{"text": b.text, "confidence": b.confidence,
-                     "bbox": b.bbox, "line_idx": b.line_idx} for b in blocks]
+            data = [
+                {
+                    "text": b.text,
+                    "confidence": b.confidence,
+                    "bbox": b.bbox,
+                    "line_idx": b.line_idx,
+                }
+                for b in blocks
+            ]
             with open(path, "w") as f:
                 json.dump(data, f)
 
@@ -115,12 +123,14 @@ class DocTROCR:
             for line in block.lines:
                 for word in line.words:
                     geo = word.geometry
-                    blocks.append(TextBlock(
-                        text=word.value,
-                        confidence=word.confidence,
-                        bbox=(geo[0][0], geo[0][1], geo[1][0], geo[1][1]),
-                        line_idx=line_num
-                    ))
+                    blocks.append(
+                        TextBlock(
+                            text=word.value,
+                            confidence=word.confidence,
+                            bbox=(geo[0][0], geo[0][1], geo[1][0], geo[1][1]),
+                            line_idx=line_num,
+                        )
+                    )
                 line_num += 1
 
         if use_cache:

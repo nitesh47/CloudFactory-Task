@@ -3,11 +3,13 @@ Document alignment using DocAligner ONNX model.
 Detects document corners and applies correction.
 """
 
-import numpy as np
-from PIL import Image
-from typing import Tuple, Optional
+from typing import Optional, Tuple
+
 import cv2
+import numpy as np
 import onnxruntime as ort
+from PIL import Image
+
 
 class DocAligner:
     """
@@ -24,12 +26,13 @@ class DocAligner:
     def session(self):
         if self._session is None:
             self._session = ort.InferenceSession(
-                self._model_path,
-                providers=['CPUExecutionProvider']
+                self._model_path, providers=["CPUExecutionProvider"]
             )
         return self._session
 
-    def align(self, image: Image.Image, confidence_threshold: float = 0.3) -> Tuple[Image.Image, float]:
+    def align(
+        self, image: Image.Image, confidence_threshold: float = 0.3
+    ) -> Tuple[Image.Image, float]:
         """
         detect corners and align document
         """
@@ -93,25 +96,27 @@ class DocAligner:
         src_pts = corners.astype(np.float32)
 
         # compute target rectangle
-        width = int(max(
-            np.linalg.norm(src_pts[0] - src_pts[1]),
-            np.linalg.norm(src_pts[3] - src_pts[2])
-        ))
-        height = int(max(
-            np.linalg.norm(src_pts[0] - src_pts[3]),
-            np.linalg.norm(src_pts[1] - src_pts[2])
-        ))
+        width = int(
+            max(
+                np.linalg.norm(src_pts[0] - src_pts[1]),
+                np.linalg.norm(src_pts[3] - src_pts[2]),
+            )
+        )
+        height = int(
+            max(
+                np.linalg.norm(src_pts[0] - src_pts[3]),
+                np.linalg.norm(src_pts[1] - src_pts[2]),
+            )
+        )
 
         # keep reasonable bounds
         width = min(max(width, 100), 3000)
         height = min(max(height, 100), 4000)
 
-        dst_pts = np.array([
-            [0, 0],
-            [width - 1, 0],
-            [width - 1, height - 1],
-            [0, height - 1]
-        ], dtype=np.float32)
+        dst_pts = np.array(
+            [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]],
+            dtype=np.float32,
+        )
 
         # compute and apply transform
         matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)

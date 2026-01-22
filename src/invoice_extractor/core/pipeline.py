@@ -7,20 +7,20 @@ stage 2: LLM for Low-Confidence Fields
 stage 3: Full LLM Extraction (RARE)
 """
 
-import time
-from typing import List, Dict, Tuple
-from pathlib import Path
-from PIL import Image
 import io
+import time
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+from PIL import Image
 
 from ..config import Config
 from ..models.result import ExtractionResult, FieldResult, HITLDecision
+from .doc_aligner import DocAligner
 from .doctr_ocr import DocTROCR
 from .extractor import InvoiceExtractor
-from .validators import InvoiceValidator
 from .llm_extractor import LLMExtractor
-from .doc_aligner import DocAligner
-
+from .validators import InvoiceValidator
 
 # All possible invoice fields
 ALL_FIELDS = [
@@ -36,10 +36,10 @@ ALL_FIELDS = [
 ]
 
 # Confidence thresholds
-FIELD_HIGH_CONFIDENCE = 0.70      # Above this = good extraction
-FIELD_LOW_CONFIDENCE = 0.50       # Below this = needs LLM
-DOCUMENT_AUTO_ACCEPT = 0.75       # Overall confidence for auto-accept
-LLM_TRIGGER_RATIO = 0.3           # If >30% fields are bad, use full LLM
+FIELD_HIGH_CONFIDENCE = 0.70  # Above this = good extraction
+FIELD_LOW_CONFIDENCE = 0.50  # Below this = needs LLM
+DOCUMENT_AUTO_ACCEPT = 0.75  # Overall confidence for auto-accept
+LLM_TRIGGER_RATIO = 0.3  # If >30% fields are bad, use full LLM
 
 
 class ExtractionPipeline:
@@ -63,7 +63,7 @@ class ExtractionPipeline:
                 det_arch=self.config.ocr.det_arch,
                 rec_arch=self.config.ocr.rec_arch,
                 use_gpu=self.config.ocr.use_gpu,
-                cache_dir=cache
+                cache_dir=cache,
             )
         return self._ocr
 
@@ -83,8 +83,7 @@ class ExtractionPipeline:
     def llm(self):
         if self._llm is None:
             self._llm = LLMExtractor(
-                api_key=self.config.llm.api_key,
-                model=self.config.llm.model
+                api_key=self.config.llm.api_key, model=self.config.llm.model
             )
         return self._llm
 
@@ -97,8 +96,13 @@ class ExtractionPipeline:
                 pass
         return self._aligner
 
-    def process(self, image, document_id: str = None, include_text: bool = False,
-                use_llm_fallback: bool = True) -> ExtractionResult:
+    def process(
+        self,
+        image,
+        document_id: str = None,
+        include_text: bool = False,
+        use_llm_fallback: bool = True,
+    ) -> ExtractionResult:
         """
         Extract fields from invoice image
         """
@@ -137,7 +141,9 @@ class ExtractionPipeline:
                 return result
 
             # Pattern extraction
-            pattern_fields, low_conf_fields = self._stage1_pattern_extraction(text, ocr_conf)
+            pattern_fields, low_conf_fields = self._stage1_pattern_extraction(
+                text, ocr_conf
+            )
 
             # Add pattern results to result
             for name, field in pattern_fields.items():
@@ -188,7 +194,9 @@ class ExtractionPipeline:
         result.processing_time_ms = (time.time() - start) * 1000
         return result
 
-    def _stage1_pattern_extraction(self, text: str, ocr_conf: float) -> Tuple[Dict[str, FieldResult], List[str]]:
+    def _stage1_pattern_extraction(
+        self, text: str, ocr_conf: float
+    ) -> Tuple[Dict[str, FieldResult], List[str]]:
         """
         stage 1: Fast pattern-based extraction.
         """
@@ -222,8 +230,9 @@ class ExtractionPipeline:
 
         return fields, low_conf_fields
 
-    def _stage2_targeted_llm(self, result: ExtractionResult, text: str,
-                            target_fields: List[str]) -> None:
+    def _stage2_targeted_llm(
+        self, result: ExtractionResult, text: str, target_fields: List[str]
+    ) -> None:
         """
         Stage 2: LLM extraction for specific low-confidence fields only.
         """
@@ -235,9 +244,7 @@ class ExtractionPipeline:
             }
 
             llm_result = self.llm.extract(
-                text,
-                target_fields=target_fields,
-                existing_values=existing
+                text, target_fields=target_fields, existing_values=existing
             )
 
             if not llm_result.success:
@@ -248,7 +255,11 @@ class ExtractionPipeline:
                     continue
 
                 existing_field = result.fields.get(name)
-                existing_conf = existing_field.confidence if existing_field and existing_field.value else 0
+                existing_conf = (
+                    existing_field.confidence
+                    if existing_field and existing_field.value
+                    else 0
+                )
 
                 if llm_field.confidence > existing_conf:
                     result.fields[name] = FieldResult(
@@ -257,7 +268,7 @@ class ExtractionPipeline:
                         confidence=llm_field.confidence,
                         extraction_method="llm_targeted",
                         validated=llm_field.validated,
-                        needs_review=llm_field.confidence < FIELD_LOW_CONFIDENCE
+                        needs_review=llm_field.confidence < FIELD_LOW_CONFIDENCE,
                     )
 
         except Exception:
@@ -279,7 +290,11 @@ class ExtractionPipeline:
                     continue
 
                 existing_field = result.fields.get(name)
-                existing_conf = existing_field.confidence if existing_field and existing_field.value else 0
+                existing_conf = (
+                    existing_field.confidence
+                    if existing_field and existing_field.value
+                    else 0
+                )
 
                 # Use LLM if it found something and is reasonably confident
                 if llm_field.confidence > existing_conf or llm_field.confidence > 0.5:
@@ -289,7 +304,7 @@ class ExtractionPipeline:
                         confidence=llm_field.confidence,
                         extraction_method="llm_full",
                         validated=llm_field.validated,
-                        needs_review=llm_field.confidence < FIELD_LOW_CONFIDENCE
+                        needs_review=llm_field.confidence < FIELD_LOW_CONFIDENCE,
                     )
 
         except Exception:
@@ -342,8 +357,9 @@ class ExtractionPipeline:
         else:
             return Image.open(image)
 
-    def process_batch(self, images, doc_ids: List[str] = None,
-                      use_llm_fallback: bool = True) -> List[ExtractionResult]:
+    def process_batch(
+        self, images, doc_ids: List[str] = None, use_llm_fallback: bool = True
+    ) -> List[ExtractionResult]:
         """Process multiple images"""
         if doc_ids is None:
             doc_ids = [None] * len(images)

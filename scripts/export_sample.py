@@ -2,7 +2,6 @@
 Export sample invoice images from the dataset as PNG files.
 """
 
-
 import argparse
 import os
 import sys
@@ -14,8 +13,9 @@ os.chdir(PROJECT_ROOT)
 sys.path.insert(0, str(PROJECT_ROOT))
 
 
-
-def export_samples(data_path: str, output_dir: str, start_index: int = 0, count: int = 1):
+def export_samples(
+    data_path: str, output_dir: str, start_index: int = 0, count: int = 1
+):
     """Export sample images from dataset"""
     loader = DataLoader(data_path)
     output_path = Path(output_dir)
@@ -35,12 +35,21 @@ def export_samples(data_path: str, output_dir: str, start_index: int = 0, count:
 
 def main():
     parser = argparse.ArgumentParser(description="Export invoice images from dataset")
-    parser.add_argument("--index", "-i", type=int, default=0, help="Start index (default: 0)")
-    parser.add_argument("--count", "-c", type=int, default=1, help="Number of images (default: 1)")
-    parser.add_argument("--output", "-o", default="sample_invoices", help="Output directory")
-    parser.add_argument("--data", "-d",
-                        default="data/train-00000-of-00001-07d07b95f758bb43.parquet",
-                        help="Path to data file")
+    parser.add_argument(
+        "--index", "-i", type=int, default=0, help="Start index (default: 0)"
+    )
+    parser.add_argument(
+        "--count", "-c", type=int, default=1, help="Number of images (default: 1)"
+    )
+    parser.add_argument(
+        "--output", "-o", default="sample_invoices", help="Output directory"
+    )
+    parser.add_argument(
+        "--data",
+        "-d",
+        default="data/train-00000-of-00001-07d07b95f758bb43.parquet",
+        help="Path to data file",
+    )
 
     args = parser.parse_args()
 

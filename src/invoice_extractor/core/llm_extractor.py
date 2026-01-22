@@ -2,19 +2,22 @@
 LLM-based field extraction for ambiguous cases.
 """
 
-import os
 import json
+import os
 import re
-from typing import Dict, Optional, List
 from dataclasses import dataclass
-from openai import OpenAI
+from typing import Dict, List, Optional
+
 import requests
+from openai import OpenAI
+
 from .validators import InvoiceValidator
 
 
 @dataclass
 class LLMFieldResult:
     """result for single field from llm"""
+
     value: Optional[str]
     confidence: float
     validated: bool = False
@@ -24,6 +27,7 @@ class LLMFieldResult:
 @dataclass
 class LLMResult:
     """result from llm extraction"""
+
     fields: Dict[str, LLMFieldResult]
     overall_confidence: float
     raw_response: str
@@ -50,7 +54,9 @@ class LLMExtractor:
 
     REVERSE_MAP = {v: k for k, v in FIELD_MAP.items()}
 
-    def __init__(self, api_key: str = None, model: str = "gpt-4o-mini", base_url: str = None):
+    def __init__(
+        self, api_key: str = None, model: str = "gpt-4o-mini", base_url: str = None
+    ):
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self._model = model
         self._base_url = base_url
@@ -60,21 +66,25 @@ class LLMExtractor:
     @property
     def client(self):
         if self._client is None:
-            self._client = OpenAI(
-                api_key=self._api_key,
-                base_url=self._base_url
-            )
+            self._client = OpenAI(api_key=self._api_key, base_url=self._base_url)
         return self._client
 
-    def extract(self, ocr_text: str, target_fields: List[str] = None,
-                existing_values: Dict[str, str] = None) -> LLMResult:
+    def extract(
+        self,
+        ocr_text: str,
+        target_fields: List[str] = None,
+        existing_values: Dict[str, str] = None,
+    ) -> LLMResult:
         """
         extract fields from ocr text using llm
         """
         if not self._api_key:
             return LLMResult(
-                fields={}, overall_confidence=0.0,
-                raw_response="", success=False, error="no api key"
+                fields={},
+                overall_confidence=0.0,
+                raw_response="",
+                success=False,
+                error="no api key",
             )
 
         prompt = self._build_prompt(ocr_text, target_fields, existing_values)
@@ -84,7 +94,7 @@ class LLMExtractor:
                 model=self._model,
                 messages=[
                     {"role": "system", "content": self._system_prompt()},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
                 max_tokens=800,
@@ -95,8 +105,11 @@ class LLMExtractor:
 
             if not parsed:
                 return LLMResult(
-                    fields={}, overall_confidence=0.0,
-                    raw_response=raw, success=False, error="parse failed"
+                    fields={},
+                    overall_confidence=0.0,
+                    raw_response=raw,
+                    success=False,
+                    error="parse failed",
                 )
 
             # field results with validation
@@ -128,9 +141,7 @@ class LLMExtractor:
                     conf = 0.4 * validation.confidence_adjustment
 
                 fields[german_key] = LLMFieldResult(
-                    value=final_value,
-                    confidence=conf,
-                    validated=validation.is_valid
+                    value=final_value, confidence=conf, validated=validation.is_valid
                 )
 
             # overall confidence based on extraction success
@@ -143,13 +154,16 @@ class LLMExtractor:
                 fields=fields,
                 overall_confidence=overall,
                 raw_response=raw,
-                success=True
+                success=True,
             )
 
         except Exception as e:
             return LLMResult(
-                fields={}, overall_confidence=0.0,
-                raw_response=str(e), success=False, error=str(e)
+                fields={},
+                overall_confidence=0.0,
+                raw_response=str(e),
+                success=False,
+                error=str(e),
             )
 
     def _system_prompt(self) -> str:
@@ -160,8 +174,12 @@ For amounts, use German format: 1.234,56
 For dates, use format: dd.mm.yyyy
 For IBAN, include spaces every 4 characters."""
 
-    def _build_prompt(self, ocr_text: str, target_fields: List[str] = None,
-                      existing: Dict[str, str] = None) -> str:
+    def _build_prompt(
+        self,
+        ocr_text: str,
+        target_fields: List[str] = None,
+        existing: Dict[str, str] = None,
+    ) -> str:
         # field guidance
         if target_fields:
             eng_fields = [self.FIELD_MAP.get(f, f) for f in target_fields]
@@ -215,7 +233,7 @@ Return JSON (use null if not found):
             pass
 
         # json object in text
-        match = re.search(r'\{[^{}]*\}', cleaned, re.DOTALL)
+        match = re.search(r"\{[^{}]*\}", cleaned, re.DOTALL)
         if match:
             try:
                 return json.loads(match.group())
@@ -238,7 +256,9 @@ Return JSON (use null if not found):
 class LocalLLMExtractor(LLMExtractor):
     """uses local llm server (ollama, llama.cpp, etc)"""
 
-    def __init__(self, base_url: str = "http://localhost:11434/v1", model: str = "llama3.2"):
+    def __init__(
+        self, base_url: str = "http://localhost:11434/v1", model: str = "llama3.2"
+    ):
         super().__init__(api_key="local", model=model, base_url=base_url)
 
     def is_available(self) -> bool:

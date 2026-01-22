@@ -50,7 +50,7 @@ class HITLRouter:
                     severe_issues += 1
 
             # check validation status
-            if hasattr(field, 'validated') and not field.validated:
+            if hasattr(field, "validated") and not field.validated:
                 issues.append(f"validation failed: {name}")
                 field.needs_review = True
                 field.review_reason = "validation failed"
@@ -133,13 +133,15 @@ class HITLQueue:
 
     def add(self, result: ExtractionResult):
         """add document to review queue"""
-        self.pending.append({
-            "document_id": result.document_id,
-            "decision": result.hitl_decision.value,
-            "reasons": result.hitl_reasons,
-            "fields": {n: f.value for n, f in result.fields.items()},
-            "confidence": result.overall_confidence
-        })
+        self.pending.append(
+            {
+                "document_id": result.document_id,
+                "decision": result.hitl_decision.value,
+                "reasons": result.hitl_reasons,
+                "fields": {n: f.value for n, f in result.fields.items()},
+                "confidence": result.overall_confidence,
+            }
+        )
 
     def get_next(self):
         """get next document for review"""
@@ -149,14 +151,8 @@ class HITLQueue:
 
     def submit_correction(self, document_id: str, corrections: dict):
         """submit human corrections"""
-        self.completed.append({
-            "document_id": document_id,
-            "corrections": corrections
-        })
+        self.completed.append({"document_id": document_id, "corrections": corrections})
 
     def get_stats(self) -> dict:
         """get queue statistics"""
-        return {
-            "pending": len(self.pending),
-            "completed": len(self.completed)
-        }
+        return {"pending": len(self.pending), "completed": len(self.completed)}

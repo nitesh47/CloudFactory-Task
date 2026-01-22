@@ -4,8 +4,9 @@ Document Structure (DOM)
 """
 
 import re
-from typing import Dict, List, Optional
 from dataclasses import dataclass
+from typing import Dict, List, Optional
+
 from ..models.result import FieldResult, LineItem
 
 
@@ -18,45 +19,105 @@ class PatternMatch:
 
 class InvoiceExtractor:
 
-    RECIPIENT_MARKERS = ["herr ", "frau ", "empfanger", "empfänger", "kundennr", "kundennummer"]
+    RECIPIENT_MARKERS = [
+        "herr ",
+        "frau ",
+        "empfanger",
+        "empfänger",
+        "kundennr",
+        "kundennummer",
+    ]
     # Patterns that indicate non-company text
     SKIP_EXACT = ["hier", "logo"]
-    SKIP_CONTAINS = ["einfugen", "einfügen", "platzhalter", "[", "]",
-                     "datum", "lieferdatum", "ansprechperson", "e-mail", "email",
-                     "rechnungsnummer", "rechnungsnr", "rechnung", "angebot", "kundennummer",
-                     "telefon:", "telefon-", "tel:", "fax:", "hotline", "www.", "http"]
+    SKIP_CONTAINS = [
+        "einfugen",
+        "einfügen",
+        "platzhalter",
+        "[",
+        "]",
+        "datum",
+        "lieferdatum",
+        "ansprechperson",
+        "e-mail",
+        "email",
+        "rechnungsnummer",
+        "rechnungsnr",
+        "rechnung",
+        "angebot",
+        "kundennummer",
+        "telefon:",
+        "telefon-",
+        "tel:",
+        "fax:",
+        "hotline",
+        "www.",
+        "http",
+    ]
     BANK_KEYWORDS = ["bank", "sparkasse", "volksbank", "kreditinstitut"]
     BANK_SKIP = ["bankverbindung", "[bankname]", "bankname"]  # labels to skip
 
     def __init__(self):
-        self._phone_pattern = re.compile(r"(?:tel\.?|telefon|fon)[:\s]*([+\d\s\-/]{8,20})", re.I)
+        self._phone_pattern = re.compile(
+            r"(?:tel\.?|telefon|fon)[:\s]*([+\d\s\-/]{8,20})", re.I
+        )
         self._date_pattern = re.compile(r"(\d{1,2}[./]\d{1,2}[./]\d{2,4})")
         self._amount_pattern = re.compile(r"(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})")
-        self._iban_pattern = re.compile(r"([A-Z]{2}\s?\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{0,2})", re.I)
+        self._iban_pattern = re.compile(
+            r"([A-Z]{2}\s?\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{0,2})",
+            re.I,
+        )
 
     def extract_all(self, text: str, ocr_boxes: List = None) -> Dict[str, FieldResult]:
-        lines = [l.strip() for l in text.split("\n") if l.strip()]
+        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
         total_lines = len(lines)
 
         sender_end = self._find_sender_section_end(lines)
 
         return {
             "IBAN": self._build_result("IBAN", self._extract_iban(text)),
-            "Rechnungsdatum": self._build_result("Rechnungsdatum", self._extract_date(lines, "rechnungsdatum")),
-            "Falligkeitsdatum": self._build_result("Falligkeitsdatum", self._extract_date(lines, "fallig")),
-            "Rechnungsnummer": self._build_result("Rechnungsnummer", self._extract_invoice_number(lines)),
-            "Summe": self._build_result("Summe", self._extract_total(lines, total_lines)),
-            "Telefonnummer": self._build_result("Telefonnummer", self._extract_phone(lines, sender_end)),
-            "Der Name der Firma": self._build_result("Der Name der Firma", self._extract_company_name(lines, sender_end)),
-            "Die Adresse der Firma": self._build_result("Die Adresse der Firma", self._extract_company_address(lines, sender_end)),
-            "Der Name der Bank": self._build_result("Der Name der Bank", self._extract_bank_name(lines, total_lines)),
+            "Rechnungsdatum": self._build_result(
+                "Rechnungsdatum", self._extract_date(lines, "rechnungsdatum")
+            ),
+            "Falligkeitsdatum": self._build_result(
+                "Falligkeitsdatum", self._extract_date(lines, "fallig")
+            ),
+            "Rechnungsnummer": self._build_result(
+                "Rechnungsnummer", self._extract_invoice_number(lines)
+            ),
+            "Summe": self._build_result(
+                "Summe", self._extract_total(lines, total_lines)
+            ),
+            "Telefonnummer": self._build_result(
+                "Telefonnummer", self._extract_phone(lines, sender_end)
+            ),
+            "Der Name der Firma": self._build_result(
+                "Der Name der Firma", self._extract_company_name(lines, sender_end)
+            ),
+            "Die Adresse der Firma": self._build_result(
+                "Die Adresse der Firma",
+                self._extract_company_address(lines, sender_end),
+            ),
+            "Der Name der Bank": self._build_result(
+                "Der Name der Bank", self._extract_bank_name(lines, total_lines)
+            ),
         }
 
-    def _build_result(self, field_name: str, match: Optional[PatternMatch]) -> FieldResult:
+    def _build_result(
+        self, field_name: str, match: Optional[PatternMatch]
+    ) -> FieldResult:
         if match:
-            return FieldResult(field_name=field_name, value=match.value,
-                             confidence=match.confidence, extraction_method=match.method)
-        return FieldResult(field_name=field_name, value=None, confidence=0.0, extraction_method="not_found")
+            return FieldResult(
+                field_name=field_name,
+                value=match.value,
+                confidence=match.confidence,
+                extraction_method=match.method,
+            )
+        return FieldResult(
+            field_name=field_name,
+            value=None,
+            confidence=0.0,
+            extraction_method="not_found",
+        )
 
     def _find_sender_section_end(self, lines: List[str]) -> int:
         for i, line in enumerate(lines[:20]):
@@ -87,7 +148,9 @@ class InvoiceExtractor:
             return False
         return any(c.isalpha() for c in line)
 
-    def _extract_company_name(self, lines: List[str], sender_end: int) -> Optional[PatternMatch]:
+    def _extract_company_name(
+        self, lines: List[str], sender_end: int
+    ) -> Optional[PatternMatch]:
         """
         Extract sender company name from top section of invoice.
 
@@ -100,7 +163,7 @@ class InvoiceExtractor:
         candidates = []
 
         # look for combined header lines
-        for i, line in enumerate(lines[:min(sender_end, 10)]):
+        for i, line in enumerate(lines[: min(sender_end, 10)]):
             if self._should_skip_line(line):
                 continue
 
@@ -164,7 +227,9 @@ class InvoiceExtractor:
         best = max(candidates, key=lambda x: (x[1], len(x[0])))
         return PatternMatch(best[0], best[1], best[2])
 
-    def _extract_company_address(self, lines: List[str], sender_end: int) -> Optional[PatternMatch]:
+    def _extract_company_address(
+        self, lines: List[str], sender_end: int
+    ) -> Optional[PatternMatch]:
         # Lines with postal code pattern in sender section
         for i, line in enumerate(lines[:sender_end]):
             if self._should_skip_line(line):
@@ -172,8 +237,8 @@ class InvoiceExtractor:
 
             # Full address line with postal code
             if re.search(r"\d{5}\s*\w+", line):
-                if i > 0 and re.search(r"str|weg|allee|platz", lines[i-1].lower()):
-                    return PatternMatch(f"{lines[i-1]} {line}", 0.8, "street_city")
+                if i > 0 and re.search(r"str|weg|allee|platz", lines[i - 1].lower()):
+                    return PatternMatch(f"{lines[i - 1]} {line}", 0.8, "street_city")
                 return PatternMatch(line, 0.75, "postal_line")
 
             if "|" in line or re.search(r"\d{5}", line):
@@ -181,8 +246,10 @@ class InvoiceExtractor:
 
         return None
 
-    def _extract_phone(self, lines: List[str], sender_end: int) -> Optional[PatternMatch]:
-        for line in lines[:sender_end + 5]:
+    def _extract_phone(
+        self, lines: List[str], sender_end: int
+    ) -> Optional[PatternMatch]:
+        for line in lines[: sender_end + 5]:
             match = self._phone_pattern.search(line)
             if match:
                 phone = re.sub(r"[^\d\s\-/+]", "", match.group(1)).strip()
@@ -223,14 +290,27 @@ class InvoiceExtractor:
                 match = re.search(pattern, line, re.I)
                 if match:
                     value = match.group(1).strip()
-                    if value and len(value) > 1 and value.lower() not in ["datum", "nummer", "nr"]:
+                    if (
+                        value
+                        and len(value) > 1
+                        and value.lower() not in ["datum", "nummer", "nr"]
+                    ):
                         return PatternMatch(value, conf, "pattern_match")
         return None
 
-    def _extract_total(self, lines: List[str], total_lines: int) -> Optional[PatternMatch]:
+    def _extract_total(
+        self, lines: List[str], total_lines: int
+    ) -> Optional[PatternMatch]:
         bottom_start = int(total_lines * 0.4)
         skip_keywords = ["netto", "zwischensumme", "mwst", "ust.", "steuer", "rabatt"]
-        priority_keywords = ["gesamtbetrag", "rechnungsbetrag", "endbetrag", "zu zahlen", "zahlbetrag", "gesamtpreis"]
+        priority_keywords = [
+            "gesamtbetrag",
+            "rechnungsbetrag",
+            "endbetrag",
+            "zu zahlen",
+            "zahlbetrag",
+            "gesamtpreis",
+        ]
 
         best = None
         best_idx = -1
@@ -250,7 +330,9 @@ class InvoiceExtractor:
                     if i + 1 < total_lines:
                         next_amounts = self._amount_pattern.findall(lines[i + 1])
                         if next_amounts:
-                            return PatternMatch(next_amounts[-1], 0.9, "final_total_next")
+                            return PatternMatch(
+                                next_amounts[-1], 0.9, "final_total_next"
+                            )
 
             if "summe" in lower or "gesamt" in lower:
                 if amounts:
@@ -265,7 +347,9 @@ class InvoiceExtractor:
 
         return best
 
-    def _extract_bank_name(self, lines: List[str], total_lines: int) -> Optional[PatternMatch]:
+    def _extract_bank_name(
+        self, lines: List[str], total_lines: int
+    ) -> Optional[PatternMatch]:
         bottom_start = int(total_lines * 0.6)
 
         for line in lines[bottom_start:]:
@@ -283,8 +367,10 @@ class InvoiceExtractor:
         if matches:
             raw = matches[0].upper().replace(" ", "")
             if len(raw) >= 18 and raw[:2].isalpha():
-                formatted = " ".join(raw[i:i+4] for i in range(0, len(raw), 4))
-                return PatternMatch(formatted, 0.95 if len(raw) == 22 else 0.7, "pattern_match")
+                formatted = " ".join(raw[i : i + 4] for i in range(0, len(raw), 4))
+                return PatternMatch(
+                    formatted, 0.95 if len(raw) == 22 else 0.7, "pattern_match"
+                )
 
         # IBAN keyword with OCR errors
         iban_match = re.search(r"IBAN[:\s]*[D\s]*([A-Z]{2}[\d\s!|]{16,26})", text, re.I)
@@ -292,7 +378,9 @@ class InvoiceExtractor:
             raw = iban_match.group(1).upper()
             cleaned = re.sub(r"[^A-Z0-9]", "", raw)
             if len(cleaned) >= 18:
-                formatted = " ".join(cleaned[:22][i:i+4] for i in range(0, min(22, len(cleaned)), 4))
+                formatted = " ".join(
+                    cleaned[:22][i : i + 4] for i in range(0, min(22, len(cleaned)), 4)
+                )
                 return PatternMatch(formatted, 0.7, "keyword_fallback")
         return None
 
@@ -327,7 +415,9 @@ class InvoiceExtractor:
             return None
 
         lower = line.lower()
-        if any(k in lower for k in ["iban", "bank", "tel", "summe", "gesamt", "rechnung"]):
+        if any(
+            k in lower for k in ["iban", "bank", "tel", "summe", "gesamt", "rechnung"]
+        ):
             return None
 
         total = amounts[-1]
@@ -337,6 +427,12 @@ class InvoiceExtractor:
         desc = re.sub(r"^\d+[\s.)\-]*", "", line[:first_amt_pos]).strip()
 
         if desc and len(desc) > 2:
-            return LineItem(description=desc, quantity=None, unit_price=unit_price,
-                          total=total, confidence=0.6, needs_review=True)
+            return LineItem(
+                description=desc,
+                quantity=None,
+                unit_price=unit_price,
+                total=total,
+                confidence=0.6,
+                needs_review=True,
+            )
         return None

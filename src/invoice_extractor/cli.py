@@ -17,7 +17,9 @@ def main():
     parser.add_argument("--gpu", action="store_true", help="use gpu for ocr")
     parser.add_argument("--no-cache", action="store_true", help="disable ocr caching")
     parser.add_argument("--raw-text", action="store_true", help="include raw ocr text")
-    parser.add_argument("--simple", action="store_true", help="output only field values")
+    parser.add_argument(
+        "--simple", action="store_true", help="output only field values"
+    )
     parser.add_argument("--threshold", type=float, default=0.6, help="hitl threshold")
     parser.add_argument("--no-llm", action="store_true", help="disable llm fallback")
     parser.add_argument("--aligner", action="store_true", help="enable doc aligner")
@@ -41,9 +43,7 @@ def main():
     # run extraction
     pipeline = ExtractionPipeline(config)
     result = pipeline.process(
-        args.image,
-        use_llm_fallback=not args.no_llm,
-        include_raw_text=args.raw_text
+        args.image, use_llm_fallback=not args.no_llm, include_raw_text=args.raw_text
     )
 
     # output
