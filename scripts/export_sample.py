@@ -6,12 +6,12 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from src.invoice_extractor.utils.data_loader import DataLoader
 
 PROJECT_ROOT = Path(__file__).parent.parent
 os.chdir(PROJECT_ROOT)
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.invoice_extractor.utils.data_loader import DataLoader
 
 def export_samples(
     data_path: str, output_dir: str, start_index: int = 0, count: int = 1

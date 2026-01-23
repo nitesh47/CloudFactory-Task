@@ -6,13 +6,13 @@ import os
 import sys
 from pathlib import Path
 from src.invoice_extractor.core.pipeline import ExtractionPipeline
-from src.invoice_extractor.utils.data_loader import DataLoader
-from src.invoice_extractor.evaluation.metrics import Evaluator
 
 PROJECT_ROOT = Path(__file__).parent.parent
 os.chdir(PROJECT_ROOT)
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.invoice_extractor.utils.data_loader import DataLoader
+from src.invoice_extractor.evaluation.metrics import Evaluator
 
 def single_extraction(loader, idx=0, use_llm=False):
     """show detailed extraction for one invoice"""
@@ -29,8 +29,8 @@ def single_extraction(loader, idx=0, use_llm=False):
     print(f"\nGot result for {result.document_id}:")
     conf = result.overall_confidence
     decision = result.hitl_decision.value
-    print(f"  confidence {conf:.2f}, decision: {decision}")
-    print(f"  took {result.processing_time_ms:.0f}ms")
+    print(f"confidence {conf:.2f}, decision: {decision}")
+    print(f"took {result.processing_time_ms:.0f}ms")
 
     if result.hitl_reasons:
         print(f"  flagged issues: {result.hitl_reasons[:5]}")
@@ -50,10 +50,10 @@ def single_extraction(loader, idx=0, use_llm=False):
         method = field.extraction_method[:6] if field.extraction_method else "?"
         validated = "V" if getattr(field, "validated", True) else "X"
 
-        print(f"  [{match}] {name}:")
-        print(f"       got: {field.value}")
-        print(f"       exp: {expected}")
-        print(f"       conf: {field.confidence:.2f} | {method} | {validated}")
+        print(f"[{match}] {name}:")
+        print(f"got: {field.value}")
+        print(f"exp: {expected}")
+        print(f"conf: {field.confidence:.2f} | {method} | {validated}")
 
 
 def batch_evaluation(loader, limit=20, use_llm=False):
@@ -75,7 +75,7 @@ def batch_evaluation(loader, limit=20, use_llm=False):
         results.append(result)
         ground_truths.append(sample.fields)
         if (i + 1) % 5 == 0:
-            print(f"  processed {i + 1} of {limit}")
+            print(f"processed {i + 1} of {limit}")
 
     report = evaluator.evaluate(results, ground_truths)
 
@@ -103,7 +103,7 @@ def batch_evaluation(loader, limit=20, use_llm=False):
         stats = analysis[thresh]
         accept_rate = stats["auto_accept_rate"]
         acc = stats["accuracy"]
-        print(f"  at {thresh:.1f} -> accept {accept_rate:.1%}, accuracy {acc:.1%}")
+        print(f"at {thresh:.1f} -> accept {accept_rate:.1%}, accuracy {acc:.1%}")
 
 
 def main():

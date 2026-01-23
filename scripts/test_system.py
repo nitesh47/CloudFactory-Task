@@ -1,19 +1,18 @@
 """
 Quick test to verify the system works.
-Uses a sample from the dataset to test extraction.
 """
 
 import json
 import os
 import sys
 from pathlib import Path
-from src.invoice_extractor.core.pipeline import ExtractionPipeline
-from src.invoice_extractor.utils.data_loader import DataLoader
 
 PROJECT_ROOT = Path(__file__).parent.parent
 os.chdir(PROJECT_ROOT)
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.invoice_extractor.core.pipeline import ExtractionPipeline
+from src.invoice_extractor.utils.data_loader import DataLoader
 
 def test_extraction():
     """Test extraction on a sample invoice"""
@@ -28,10 +27,10 @@ def test_extraction():
     # Load dependencies
     print("\nChecking dependencies...")
     try:
-        print("  looks good")
+        print("looks good")
     except ImportError as e:
-        print(f"  missing: {e}")
-        print("  try: poetry install")
+        print(f"missing: {e}")
+        print("try: poetry install")
         return False
 
     # Load sample
@@ -39,9 +38,9 @@ def test_extraction():
     try:
         loader = DataLoader(data_path)
         sample = loader[0]
-        print(f"  got {len(loader)} samples total")
+        print(f"got {len(loader)} samples total")
     except Exception as e:
-        print(f"  failed: {e}")
+        print(f"failed: {e}")
         return False
 
     # Run extraction
@@ -51,9 +50,9 @@ def test_extraction():
         result = pipeline.process(
             sample.image_bytes, document_id="test_sample", use_llm_fallback=False
         )
-        print(f"  done in {result.processing_time_ms:.0f}ms")
+        print(f"done in {result.processing_time_ms:.0f}ms")
     except Exception as e:
-        print(f"  something went wrong: {e}")
+        print(f"something went wrong: {e}")
         return False
 
     # Check output
@@ -98,7 +97,7 @@ def test_extraction():
     if low_conf:
         print(f"{low_conf} fields need review")
 
-    print("\nLooks good!")
+    print("\nCompleted!")
     return True
 
 
