@@ -13,6 +13,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.invoice_extractor.utils.data_loader import DataLoader
 
+
 def export_samples(
     data_path: str, output_dir: str, start_index: int = 0, count: int = 1
 ):
@@ -28,7 +29,7 @@ def export_samples(
         sample = loader[i]
         filename = output_path / f"invoice_{i:04d}.png"
         sample.image.save(filename)
-        print(f"  Saved: {filename}")
+        print(f"Saved: {filename}")
 
     print(f"\nDone! Images saved to {output_dir}/")
 

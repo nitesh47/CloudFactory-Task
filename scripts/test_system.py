@@ -14,6 +14,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.invoice_extractor.core.pipeline import ExtractionPipeline
 from src.invoice_extractor.utils.data_loader import DataLoader
 
+
 def test_extraction():
     """Test extraction on a sample invoice"""
     print("Running quick system test...")

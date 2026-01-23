@@ -14,6 +14,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.invoice_extractor.utils.data_loader import DataLoader
 from src.invoice_extractor.evaluation.metrics import Evaluator
 
+
 def single_extraction(loader, idx=0, use_llm=False):
     """show detailed extraction for one invoice"""
     print(f"\n--- Extracting sample {idx} ---")
