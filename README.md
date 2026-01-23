@@ -58,6 +58,10 @@ python evaluate_all.py --limit 20
 
 # run on everything
 python evaluate_all.py
+
+# run on test data
+
+python evaluate_all.py --data data/test-00000-of-00001-a9d41ee534bb86d0.parquet
 ```
 
 This outputs precision, recall, F1 for each field, plus saves detailed results to `results/`.
